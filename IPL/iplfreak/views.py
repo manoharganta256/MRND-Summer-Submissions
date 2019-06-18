@@ -24,7 +24,7 @@ def season_details(request, year):
     context['year'] = year
 
     if request.user.is_authenticated:
-        user_profile =  UserProfile.objects.get(user=request.user)
+        user_profile = UserProfile.objects.get(user=request.user)
         context['profile_pic'] = user_profile.profile_picture
 
     return render(request, 'iplfreak/season_details.html', context)
@@ -39,7 +39,8 @@ def match_details(request, year, match_id):
 
     context['match'] = match
     context['year'] = year
-    context['extras'] = sum(extra['extra_runs'] for extra in Deliveries.objects.filter(match_id=match_id).values('extra_runs'))
+    context['extras'] = sum(
+        extra['extra_runs'] for extra in Deliveries.objects.filter(match_id=match_id).values('extra_runs'))
 
     context['team_1'] = deliveries[0]['batting_team']
     context['team_2'] = deliveries[0]['bowling_team']
@@ -47,14 +48,18 @@ def match_details(request, year, match_id):
     context['team_1_deliveries'] = Deliveries.objects.filter(match_id=match_id, innings=1)
     context['team_2_deliveries'] = Deliveries.objects.filter(match_id=match_id, innings=2)
 
-    context['top_batsmen_1'] = Deliveries.objects.filter(match_id=match_id, innings=1).values('batsman').annotate(total=Sum('batsman_runs')).order_by('-total')[:3]
-    context['top_batsmen_2'] = Deliveries.objects.filter(match_id=match_id, innings=2).values('batsman').annotate(total=Sum('batsman_runs')).order_by('-total')[:3]
+    context['top_batsmen_1'] = Deliveries.objects.filter(match_id=match_id, innings=1).values('batsman').annotate(
+        total=Sum('batsman_runs')).order_by('-total')[:3]
+    context['top_batsmen_2'] = Deliveries.objects.filter(match_id=match_id, innings=2).values('batsman').annotate(
+        total=Sum('batsman_runs')).order_by('-total')[:3]
 
-    context['top_bowler_1'] = Deliveries.objects.filter(match_id=match_id, innings=1).exclude(player_dismissed=None).values('bowler').annotate(total=Count('bowler')).order_by('-total')[:3]
-    context['top_bowler_2'] = Deliveries.objects.filter(match_id=match_id, innings=2).exclude(player_dismissed=None).values('bowler').annotate(total=Count('bowler')).order_by('-total')[:3]
+    context['top_bowler_1'] = Deliveries.objects.filter(match_id=match_id, innings=1).exclude(
+        player_dismissed=None).values('bowler').annotate(total=Count('bowler')).order_by('-total')[:3]
+    context['top_bowler_2'] = Deliveries.objects.filter(match_id=match_id, innings=2).exclude(
+        player_dismissed=None).values('bowler').annotate(total=Count('bowler')).order_by('-total')[:3]
 
     if request.user.is_authenticated:
-        user_profile =  UserProfile.objects.get(user=request.user)
+        user_profile = UserProfile.objects.get(user=request.user)
         context['profile_pic'] = user_profile.profile_picture
 
     return render(request, 'iplfreak/match_details.html', context)
@@ -130,3 +135,16 @@ class SignupController(View):
 def logout_user(request):
     logout(request)
     return HttpResponseRedirect('/login/')
+
+
+def points_table(request, year):
+    context = dict()
+    context['points_table'] = Match.objects.filter(season=year).values('winner').annotate(
+        total=Count('winner')).order_by('-total')
+
+    if request.user.is_authenticated:
+        user_profile = UserProfile.objects.get(user=request.user)
+        context['profile_pic'] = user_profile.profile_picture
+
+    context['year'] = year
+    return render(request, 'iplfreak/points_table.html', context)
